@@ -10,6 +10,12 @@ This program takes 1,325 seconds (~22 minutes) on a laptop: Intel(R) Core(TM) i7
 This program lays the foundation for the following paper: Arun Venkatesh Ramesh, Xingpeng Li and Kory Hedman, “An Accelerated-Decomposition Approach for Security-Constrained Unit Commitment with Corrective Network Reconfiguration,” IEEE Transactions on Power Systems, online early access, Jul. 2021. (DOI: 10.1109/TPWRS.2021.3098771)
 
 
+## Contact:
+Dr. Xingpeng Li
+University of Houston
+Email: xli83@central.uh.edu
+Website: https://rpglab.github.io/
+
 ## License:
 This work is licensed under the terms of the Creative Commons Attribution 4.0 (CC BY 4.0) license. 
 https://creativecommons.org/licenses/by/4.0/
