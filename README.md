@@ -8,7 +8,8 @@ This N-1 SCUC is solved by Bender decomposition, implemented in the code SCUC.ru
 This program takes 1,325 seconds (~22 minutes) on a laptop: Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz, 32 GB RAM, Windows 10.
 
 This program lays the foundation for the following paper: 
-[Arun Venkatesh Ramesh, Xingpeng Li and Kory Hedman, “An Accelerated-Decomposition Approach for Security-Constrained Unit Commitment with Corrective Network Reconfiguration,” IEEE Transactions on Power Systems, online early access, Jul. 2021. (DOI: 10.1109/TPWRS.2021.3098771)]https://ieeexplore.ieee.org/document/9492752)
+
+[Arun Venkatesh Ramesh, Xingpeng Li and Kory Hedman, “An Accelerated-Decomposition Approach for Security-Constrained Unit Commitment with Corrective Network Reconfiguration,” IEEE Transactions on Power Systems, online early access, Jul. 2021. (DOI: 10.1109/TPWRS.2021.3098771)](https://ieeexplore.ieee.org/document/9492752)
 
 ## Contact:
 Dr. Xingpeng Li
