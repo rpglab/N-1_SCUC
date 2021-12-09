@@ -1,6 +1,7 @@
 # This AMPL script code implments Bender decomposition that solves an N-1 SCUC problem.
 # The models for the Master problem and slave sub-problems, as well as the cut, are defined in N-1_SCUC.mod.
-# commands: include SCUC.run;
+# Commands: include SCUC.run;
+# Developed by Xingpeng Li
 
 printf "\n\n\n##############  Benders Decomposition SCUC Program Starts Here ##############\n\n";
 

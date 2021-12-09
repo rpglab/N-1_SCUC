@@ -3,6 +3,7 @@
 # This N-1 SCUC is solved by Bender decomposition, implemented in the code SCUC.run.
 # This code file defines the models for the Master problem and slave sub-problems, as well as the cut.
 # This is not the main runnable code; check the code file: SCUC.run.
+# Developed by Xingpeng Li
 
 set BUS;    # set of buses
 set BRANCH; # set of branches
