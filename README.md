@@ -12,9 +12,13 @@ This program lays the foundation for the following paper:
 
 ## Contact:
 Dr. Xingpeng Li
+
 University of Houston
+
 Email: xli83@central.uh.edu
+
 Website: https://rpglab.github.io/
+
 
 ## License:
 This work is licensed under the terms of the Creative Commons Attribution 4.0 (CC BY 4.0) license. 
