@@ -1,0 +1,225 @@
+# This AMPL script code implments Bender decomposition that solves an N-1 SCUC problem.
+# The models for the Master problem and slave sub-problems, as well as the cut, are defined in N-1_SCUC.mod.
+# commands: include SCUC.run;
+
+printf "\n\n\n##############  Benders Decomposition SCUC Program Starts Here ##############\n\n";
+
+model N-1_SCUC.mod;
+data dataFile.dat;
+
+option solver gurobi;
+option gurobi_options('mipgap=0.01 timelim=900');
+option show_stats 1;
+
+# define problems
+problem Master: bus_angle, line_flow, gen_supply, reserve, Ugt, Vgt,
+                obj_M,
+                PGen1, unitReserve2, unitReserve1, systemReserve, 
+				HR_RampUP, HR_RampDN, HR_RampUP2, HR_RampDN2, 
+				FacetUP, FacetUP2, FacetDN, FacetDN2, SUSD, SUSD2, 
+				Line_FlowEq, Thermal2, Thermal1, PowerBal,
+				#slack, 
+				Cut_Defn, Cut_Defn2, 
+				costConstr,
+				M_COST;
+
+problem Subp1: s1, gen_supply_g, line_flow_k, bus_angle_n, 
+               LineCont1, LineCont2, LineCont3, LineCont4, 
+               LineCont5, LineCont6, LineCont7, LineCont8, 
+			   LineCont999,
+			   S_Line;
+   #option presolve 0;
+	
+problem Subp2: s2, gen_supply2_g, line_flow2_k, bus_angle2_n, 
+               GenCont1, GenCont2, GenCont3, GenCont4, 
+               GenCont5, GenCont6, GenCont7, GenCont8, 
+			   GenCont999,
+			   GenCont1_02, GenCont2_02,
+			   S_gen;
+   #option presolve 0;
+
+# Initial DUAL VARIABLES value.
+param s1log {1..nCUT, c in Nk, t in LOAD};
+param s2log {1..nCUT, c in Ng, t in LOAD};
+param nCutNkLog {1..nCUT};
+param nCutNgLog {1..nCUT};
+param solved;
+
+# Iteration loop
+printf "\n\n--------------  Solving Master Problem Initially. --------------\n\n" > result.txt;
+let nCUT := 0;
+solve Master;
+display _total_solve_elapsed_time;
+printf "\n\n--------------  Master Problem solved Initially. --------------\n\n" > result.txt;
+param Masterlog {0..nCUT}; let Masterlog[0] := M_COST;
+let nCUT := 1;
+
+repeat {printf "\n\n\n//////////////////  ITERATION %d  //////////////////\n\n", nCUT > result.txt;
+
+    let solved := 1;
+	
+	let nCutNkLog[nCUT] := 0;
+	let nCutNgLog[nCUT] := 0;
+	
+	for {t in LOAD}
+	{
+	    let t_iter := t;
+		
+	    for{g in GEND}
+		{
+		    if abs(gen_supply[g,t]) <= 0.01 then
+		    {
+		        let gen_supply_fix[g] := 0;
+		    }
+		    else
+		    {
+		        let gen_supply_fix[g] := gen_supply[g,t];
+		    }
+		    if abs(Ugt[g,t] - 1) <= 0.01 then
+		    {
+		        let ugt_fix[g] := 1;
+		    }
+		    else if abs(Ugt[g,t] - 0) <= 0.01 then
+		    {
+		        let ugt_fix[g] := 0;
+		    }
+		    else
+		    {
+		        printf "\n\n!!!!!!!!!  Something wrong when passing value from Master-problem to Sub-problem.  !!!!!!!!!!\n\n";
+		    }
+		}
+		
+	    for{c in Nk}
+		{
+		    let c_line := c;
+		    solve Subp1;
+			if Subp1.result == 'infeasible' then 
+			{
+			    printf "\n##############  Something wrong when solving sub-problme 1, t: %d, c: %d in %d-th iteration! It is infeasible which should not happen !!!  ##############\n\n",t,c,nCUT;# > result.txt; 
+				break;
+			}
+		    if abs(S_Line - 0) >= 1e-5 then   # infeasible
+	        {
+                printf "\n##############  Sub-problem 1, t: %d, c: %d, is infeasible in %d-th iteration.  ##############\n\n",t,c,nCUT > result.txt;
+	            if abs(S_Line - 1) >= 1e-5 then
+	    	    {
+	        	    printf "\n\n!!!!!!!!!  Something wrong here in Sub-p1, t: %d, c: %d, -> infeasible in %d-th iteration.  !!!!!!!!!!\n\n",t,c,nCUT > result.txt;
+	        	}
+	        	let {g in GEND} D1gct[nCUT,g,c,t] := LineCont1[g].dual;
+	        	let {g in GEND} D2gct[nCUT,g,c,t] := LineCont2[g].dual;
+	            let {g in GEND} D3gct[nCUT,g,c,t] := LineCont3[g].dual;
+	        	let {g in GEND} D4gct[nCUT,g,c,t] := LineCont4[g].dual;
+	        	let CkCut[nCUT,c,t] := sum{k in BRANCH: k != c}branch_rateC[k]*LineCont6[k].dual
+	        	                 + sum{k in BRANCH: k != c}branch_rateC[k]*LineCont7[k].dual 
+	        				     + sum{n in BUS}Bus_Pd[n,t]*LineCont8[n].dual;
+				let MarkNk[nCUT,c,t] := 0;
+	        	display CkCut[nCUT,c,t];
+				let solved := 0;
+				let nCutNkLog[nCUT] := nCutNkLog[nCUT] + 1;
+	            let s1log[nCUT,c,t] := S_Line;
+			}
+			else
+			{
+			    printf "\n$$$$$$$$$$$$$  Sub-problem 1, t: %d, c: %d, is feasible in %d-th iteration ---- Great! -----\n\n",t,c,nCUT > result.txt;
+	    	    if (S_Line - 0) >= 1e-6 then
+			    {
+			        printf "\n\n!!!!!!!!!  Something wrong here in Sub-p1 -> feasible.  !!!!!!!!!!\n\n" > result.txt;
+			    }
+	    	    for{g in GEND}
+			    {
+			        let D1gct[nCUT,g,c,t] := 0;
+			        let D2gct[nCUT,g,c,t] := 0;
+			        let D3gct[nCUT,g,c,t] := 0;
+			        let D4gct[nCUT,g,c,t] := 0;
+			        let CkCut[nCUT,c,t] := 0;
+					let MarkNk[nCUT,c,t] := 1;
+			    }
+		       let s1log[nCUT,c,t] := S_Line;
+			}
+		}
+
+		for{c in Ng}
+		{
+			let c_gen := c;
+		    solve Subp2;
+			if Subp2.result == 'infeasible' then 
+			{
+			    printf "\n##############  Something wrong when solving sub-problme 2, t: %d, c: %d in %d-th iteration! It is infeasible which should not happen !!!  ##############\n\n",t,c,nCUT;# > result.txt; 
+				break;
+			}
+		    if (S_gen - 0) >= 1e-5 then   # infeasible
+	        {
+                printf "\n##############  Sub-problem 2, t: %d, c: %d, is infeasible in %d-th iteration.  ##############\n\n",t,c,nCUT > result.txt;
+	            if (S_gen - 1) >= 1e-5 then
+	    	    {
+	        	    printf "\n\n!!!!!!!!!  Something wrong here in Sub-p2, t: %d, c: %d, -> infeasible in %d-th iteration.  !!!!!!!!!!\n\n",t,c,nCUT > result.txt;
+	        	}
+		    	let {g in GEND: g != c} D5gct[nCUT,g,c,t] := GenCont1[g].dual;
+	    		let {g in GEND: g == c} D5gct[nCUT,g,c,t] := GenCont1_02[g].dual;
+	    		let {g in GEND: g != c} D6gct[nCUT,g,c,t] := GenCont2[g].dual;
+	    		let {g in GEND: g == c} D6gct[nCUT,g,c,t] := GenCont2_02[g].dual;
+	    		let {g in GEND: g != c} D7gct[nCUT,g,c,t] := GenCont3[g].dual;
+	    		let {g in GEND: g != c} D8gct[nCUT,g,c,t] := GenCont4[g].dual;
+	    		let CgCut[nCUT,c,t] := sum{k in BRANCH: k != c}branch_rateC[k]*GenCont6[k].dual
+		                         + sum{k in BRANCH: k != c}branch_rateC[k]*GenCont7[k].dual 
+							     + sum{n in BUS}Bus_Pd[n,t]*GenCont8[n].dual;
+				let MarkNg[nCUT,c,t] := 0;
+				display CgCut[nCUT,c,t];
+				let solved := 0;
+				let nCutNgLog[nCUT] := nCutNgLog[nCUT] + 1;
+				let s2log[nCUT,c,t] := S_gen;
+			}
+			else
+			{
+			    printf "\n$$$$$$$$$$$$$  Sub-problem 2, t: %d, c: %d, is feasible in %d-th iteration ---- Great! -----\n\n",t,c,nCUT > result.txt;
+	    	    if (S_gen - 0) >= 1e-6 then
+			    {
+			        printf "\n\n!!!!!!!!!  Something wrong here in Sub-p -> feasible.  !!!!!!!!!!\n\n";
+			    }
+	    	    for{g in GEND}
+			    {
+			        let D5gct[nCUT,g,c,t] := 0;
+			        let D6gct[nCUT,g,c,t] := 0;
+			        let D7gct[nCUT,g,c,t] := 0;
+			        let D8gct[nCUT,g,c,t] := 0;
+			        let CgCut[nCUT,c,t] := 0;
+				    let MarkNg[nCUT,c,t] := 1;
+			    }
+		       let s2log[nCUT,c,t] := S_gen;
+			}
+		}
+	}
+	
+	#printf "______________Benders' Cuts for Line Contingency_______________";
+	#expand Cut_Defn;
+	#printf "______________Benders' Cuts for Generator Contingency_______________";
+	#expand Cut_Defn2;
+
+	display _total_solve_elapsed_time;
+
+    if solved == 1 then 
+	{
+	    printf "\n\n***************   Problem Converged    *****************\n\n";
+		break;
+	}
+	
+    printf "\n\n##############  Re-Solving Master Problem in %d-th iteration.  ##############\n\n", nCUT;
+    solve Master;
+    display _total_solve_elapsed_time;
+	let Masterlog[nCUT] := M_COST;
+	
+	#display s1log;
+    #display s2log;
+	display Masterlog;
+
+	let nCUT := nCUT + 1;	
+}
+
+printf "\n\n------------ Report The Result --------------\n\n";
+#display s1log;
+#display s2log;
+display Masterlog;
+display nCutNkLog;
+display nCutNgLog;
+display _total_solve_elapsed_time;
+

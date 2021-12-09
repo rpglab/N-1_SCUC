@@ -1,0 +1,22 @@
+#### This file will load the system data.
+
+# Loads the data for Bus and assigns the columns
+param: BUS: bus_num bus_Pd:= include Bus.dat;
+
+# Loads the data for GEN
+param: GEND: genD_bus genD_minUP genD_minDN genD_Pmax genD_Pmin genC_Startup genC_Cost
+genC_NLoad SPRamp HRamp StartRamp := 
+include Gen.dat; 
+
+# Loads the data for BRANCH 
+param: BRANCH: branch_fbus branch_tbus branch_b branch_rateA branch_rateC branch_radial:=
+include Branch.dat;
+
+# Loads the data for the Load's percentage of peak annual load
+param: LOAD: load_pcnt:= include Load_pcnt.dat;
+
+# Calculates the load for each bus in each hour:
+for {k in BUS, t in LOAD}
+{
+	let Bus_Pd[k,t]:=load_pcnt[t]*bus_Pd[k]/MBase;
+};
