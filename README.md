@@ -5,6 +5,9 @@ This AMPL program solves an N-1 SCUC problem that considers all contingency-case
 
 This N-1 SCUC is solved by Bender decomposition, implemented in the code SCUC.run. The code file, N-1_SCUC.mod, defines the models for the Master problem and slave sub-problems, as well as the cut. For this work, N-1_SCUC.mod is not the main runnable code while the code file, SCUC.run, is the script main runnable program.
 
+The test case used here is a modified IEEE RTS-96 reliability test system (73-bus) that was initially developed by the IEEE reliability subcommittee and published in 1979 and later enhanced in 1996. Reference: "The IEEE Reliability Test System-1996. A report prepared by the Reliability Test System Task Force of the Application of Probability Methods Subcommittee" and link: https://ieeexplore.ieee.org/document/780914.
+Though only tested on this single system here, these codes can work on any other systems.
+
 This program takes 1,325 seconds (~22 minutes) on a laptop: Intel(R) Core(TM) i7-8850H CPU @ 2.60GHz, 32 GB RAM, Windows 10.
 
 This program lays the foundation for the following paper: 
